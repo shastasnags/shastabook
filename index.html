@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shastabook</title>
+    <style>
+    .container{
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    #confirmDelete {
+    background-color: #FF0000; /* Red color */
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    cursor: pointer;
+    border-radius: 5px;
+    display: none; /* Initially hidden */
+}
+
+    .tweet-checkbox {
+    margin-right: 5px;
+}
+
+        body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+    max-width: 800px; /* Adjust the max-width to your preference */
+    margin-left: auto;
+    margin-right: auto;
+}
+
+        h1 {
+            color: #1DA1F2;
+        }
+#controlButtons {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 10px 0;
+    margin-top: 10px 0;
+}
+
+#controlButtons button {
+  display: flex;
+    margin-bottom: 10px;
+    cursor: pointer;
+}
+        .tweet {
+            border: 4px solid #ccc;
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .profile-picture {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            margin-right: 10px;
+            overflow: hidden;
+        }
+
+        .profile-picture img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .user-info {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 5px;
+        }
+
+        .display-name {
+            font-weight: bold;
+            margin-right: 5px;
+            margin-top: 5px;
+        }
+
+        .handle {
+            color: #888;
+            margin-right: 5px;
+            margin-top: 0px;
+            margin-bottom: 0px;
+        }
+
+.tweet-content::before {
+    content: '';
+    display: block;
+    border-top: 2px solid #ccc;
+    margin-bottom: 0px;
+    margin-top: 0px;
+    margin: 4px 0;
+}
+
+        .tweet-content {
+            flex: 1;
+            margin-bottom: 5px;
+            margin-top: 2px;
+            margin-left: 2px;
+            margin-right: 2px;
+        }
+
+
+
+        .timestamp {
+            font-size: 0.6em;
+            color: #555;
+            margin-bottom: 0px;
+        }
+
+.tweet-content::after {
+    content: '';
+    display: block;
+    border-top: 2px solid #ccc;
+    margin-top: 3px;
+    margin: 6px 0;
+}
+
+ .tweet-actions {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+
+        .edited-indicator {
+            font-size: 0.5em;
+            color: #555;
+        }
+
+        textarea {
+            flex: 1;
+            width: calc(50%);
+            height: calc(50%);
+            display:block;
+            margin-left: auto;
+            margin-right: auto;
+            margin-bottom: 10px;
+            
+        }
+
+        button {
+            background-color: #1DA1F2;
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            cursor: pointer;
+            border-radius: 5px;
+            display:block;
+            margin-left: auto;
+            margin-right: auto;
+            margin-bottom:7px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+  <a href="https://shasta.neocities.org/"><img src="https://shasta.neocities.org/Data/wordart-removebg-preview(1).png" alt="Shastabook"></a>
+</div>
+
+
+
+<!-- Add Edit and Delete buttons -->
+<div id="controlButtons">
+    <button onclick="toggleDeleteMode()">🚽</button>
+</div>
+<div id="imageContainer"></div>
+
+<div>
+    <textarea id="tweetInput" placeholder="share ur smells..."></textarea>
+<input type="file" id="imageInput" accept="image/*" onchange="previewImage(this)">
+    <button onclick="postTweet()">Post</button>
+</div>
+
+    <div id="tweetsContainer">
+        <!-- Your tweets will appear here -->
+    </div>
+
+    <script>
+        
+    // Add these variables at the beginning of your script
+var editMode = false;
+var deleteMode = false;
+
+function toggleEditMode() {
+    editMode = !editMode;
+    deleteMode = false;
+    updateButtonVisibility();
+}
+
+function toggleDeleteMode() {
+    deleteMode = !deleteMode;
+    editMode = false;
+    updateButtonVisibility();
+}
+
+function updateButtonVisibility() {
+    var tweets = document.getElementsByClassName('tweet');
+    var controlButtons = document.getElementById('controlButtons');
+
+    if (editMode || deleteMode) {
+        controlButtons.style.display = 'flex';
+
+        for (var i = 0; i < tweets.length; i++) {
+            var checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'tweet-checkbox';
+
+            if (deleteMode) {
+                checkbox.style.display = 'inline-block';
+            } else {
+                checkbox.style.display = 'none';
+            }
+
+            tweets[i].insertBefore(checkbox, tweets[i].firstChild);
+        }
+    } else {
+        controlButtons.style.display = 'none';
+
+        var checkboxes = document.getElementsByClassName('tweet-checkbox');
+        for (var i = 0; i < checkboxes.length; i++) {
+            checkboxes[i].remove();
+        }
+    }
+}
+
+// Modify deleteTweet function to delete tweets based on checkboxes
+function deleteTweet() {
+    var checkboxes = document.getElementsByClassName('tweet-checkbox');
+    var tweetsContainer = document.getElementById('tweetsContainer');
+
+    for (var i = checkboxes.length - 1; i >= 0; i--) {
+        if (checkboxes[i].checked) {
+            tweetsContainer.removeChild(checkboxes[i].parentNode);
+           deleteTweetFromStorage(checkboxes[i].parentNode.querySelector('.tweet-content').textContent);
+        }
+    }
+
+    // Reset modes and update button visibility
+    editMode = false;
+    deleteMode = false;
+    updateButtonVisibility();
+}
+        // Load tweets from localStorage on page load
+        window.onload = function () {
+            loadTweets();
+        };
+
+function previewImage(input) {
+    var imageContainer = document.getElementById('imageContainer');
+
+    // Remove previous image, if any
+    while (imageContainer.firstChild) {
+        imageContainer.removeChild(imageContainer.firstChild);
+    }
+
+    if (input.files && input.files[0]) {
+        var reader = new FileReader();
+
+        reader.onload = function (e) {
+            var previewImage = document.createElement('img');
+            previewImage.src = e.target.result;
+            previewImage.alt = 'Selected Image';
+            previewImage.style.maxWidth = '100%';
+            imageContainer.appendChild(previewImage);
+        };
+
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+function postTweet() {
+    var tweetInput = document.getElementById('tweetInput').value;
+    var imageInput = document.getElementById('imageInput');
+
+    if (tweetInput.trim() === '' && !imageInput.files.length) {
+        alert('Please enter a tweet or select an image before posting.');
+        return;
+    }
+
+    var tweetsContainer = document.getElementById('tweetsContainer');
+    var tweetDiv = document.createElement('div');
+    tweetDiv.className = 'tweet';
+
+    // Profile picture
+    var profilePicture = document.createElement('div');
+    profilePicture.className = 'profile-picture';
+    // Use an image URL for your profile picture
+    profilePicture.innerHTML = '<img src="your_profile_picture_url.jpg" alt="Profile Picture">';
+    tweetDiv.appendChild(profilePicture);
+
+    // User information container
+    var userInfo = document.createElement('div');
+    userInfo.className = 'user-info';
+
+    // Display name
+    var displayName = document.createElement('div');
+    displayName.className = 'display-name';
+    displayName.textContent = 'Your Display Name';
+    userInfo.appendChild(displayName);
+    tweetDiv.appendChild(userInfo);
+
+    // Handle
+    var handle = document.createElement('div');
+    handle.className = 'handle';
+    handle.textContent = '@shasta';
+    userInfo.appendChild(handle);
+    tweetDiv.appendChild(userInfo);
+
+ // Tweet content
+    var tweetContent = document.createElement('div');
+    tweetContent.className = 'tweet-content';
+    tweetContent.textContent = tweetInput;
+    tweetDiv.appendChild(tweetContent);
+
+    // Check if the tweet has an uploaded image
+    if (imageInput.files.length > 0) {
+        var uploadedImage = document.createElement('img');
+        var reader = new FileReader();
+
+        reader.onload = function (e) {
+            uploadedImage.src = e.target.result;
+            saveTweet(tweetInput, new Date(), e.target.result, false);
+        };
+
+        reader.readAsDataURL(imageInput.files[0]);
+
+        uploadedImage.alt = 'Uploaded Image';
+        uploadedImage.style.maxWidth = '50%';
+        tweetDiv.appendChild(uploadedImage);
+    } else {
+        saveTweet(tweetInput, new Date());
+    }
+
+    // Timestamp
+    var timestamp = document.createElement('div');
+    timestamp.className = 'timestamp';
+    timestamp.textContent = formatTimestamp(new Date());
+    tweetDiv.appendChild(timestamp);
+
+    // Tweet actions container
+    var tweetActions = document.createElement('div');
+    tweetActions.className = 'tweet-actions';
+
+
+
+
+    // Delete button
+    var deleteButton = document.createElement('div');
+    deleteButton.className = 'delete-button';
+    deleteButton.textContent = '️';
+    deleteButton.onclick = function () { deleteTweet(tweetDiv, timestamp); };
+    tweetActions.appendChild(deleteButton);
+
+    tweetDiv.appendChild(tweetActions);
+
+     // Prepend the tweet element to the container
+    tweetsContainer.insertBefore(tweetDiv, tweetsContainer.firstChild);
+
+    // Clear the input fields after posting
+    document.getElementById('tweetInput').value = '';
+    imageInput.value = ''; // Clear the file input
+
+    // Reset editMode and deleteMode and update button visibility
+    editMode = false;
+    deleteMode = false;
+    updateButtonVisibility();
+}
+
+        function formatTimestamp(date) {
+            var now = new Date();
+            var diffInMs = now - date;
+
+            if (diffInMs < 60 * 1000) { // Less than 1 minute
+                return 'Just Now';
+            } else if (diffInMs < 60 * 60 * 1000) { // Less than 1 hour
+                return Math.floor(diffInMs / (60 * 1000)) + 'm';
+            } else if (diffInMs < 24 * 60 * 60 * 1000) { // Less than 24 hours
+                return Math.floor(diffInMs / (60 * 60 * 1000)) + 'h';
+            } else { // 24 hours or more
+                return date.toLocaleDateString('en-US') + ' ' + date.toLocaleTimeString('en-US');
+            }
+        }
+
+function saveTweet(tweet, timestamp, imageData, edited) {
+    var tweets = JSON.parse(localStorage.getItem('tweets')) || [];
+    var tweetObject = { tweet: tweet, timestamp: timestamp.getTime(), imageData: imageData, edited: edited };
+
+    tweets.unshift(tweetObject);
+    localStorage.setItem('tweets', JSON.stringify(tweets));
+}
+
+function loadTweets() {
+    var tweets = JSON.parse(localStorage.getItem('tweets')) || [];
+    var tweetsContainer = document.getElementById('tweetsContainer');
+
+    for (var i = 0; i < tweets.length; i++) {
+        var tweet = tweets[i];
+
+        // Create tweet element
+        var tweetDiv = document.createElement('div');
+        tweetDiv.className = 'tweet';
+
+
+                // Profile picture
+                var profilePicture = document.createElement('div');
+                profilePicture.className = 'profile-picture';
+                // Use an image URL for your profile picture
+                profilePicture.innerHTML = '<img src="https://shasta.neocities.org/Data/tinyassavatar.png" alt="Profile Picture">';
+                tweetDiv.appendChild(profilePicture);
+
+                // User information container
+                var userInfo = document.createElement('div');
+                userInfo.className = 'user-info';
+
+                // Display name
+                var displayName = document.createElement('div');
+                displayName.className = 'display-name';
+                displayName.textContent = 'Fat Yeen';
+                userInfo.appendChild(displayName);
+                tweetDiv.appendChild(userInfo);
+
+                // Handle
+            var handle = document.createElement('div');
+            handle.className = 'handle';
+            handle.textContent = '@shasta';
+            userInfo.appendChild(handle);
+
+            tweetDiv.appendChild(userInfo);
+
+                // Tweet content
+                var tweetContent = document.createElement('div');
+                tweetContent.className = 'tweet-content';
+                tweetContent.textContent = tweet.tweet;
+                tweetDiv.appendChild(tweetContent);
+
+                // Timestamp
+                var timestamp = document.createElement('div');
+                timestamp.className = 'timestamp';
+                timestamp.textContent = formatTimestamp(new Date(tweet.timestamp));
+                tweetDiv.appendChild(timestamp);
+
+                // If the tweet is edited, add an indicator
+                if (tweet.edited) {
+                    var editedIndicator = document.createElement('span');
+                    editedIndicator.className = 'edited-indicator';
+                    editedIndicator.textContent = '(edited)';
+                    timestamp.parentNode.insertBefore(editedIndicator, timestamp.nextSibling);
+                }
+// Check if the tweet has an image
+        if (tweet.imageData) {
+            var uploadedImage = document.createElement('img');
+            uploadedImage.src = tweet.imageData;
+            uploadedImage.alt = 'Uploaded Image';
+            uploadedImage.style.maxWidth = '100%';
+            tweetDiv.appendChild(uploadedImage);
+        }
+
+        // Append the tweet element to the container
+        tweetsContainer.appendChild(tweetDiv);
+    }
+}
+
+        function editTweet(tweetContent, timestamp) {
+            var editedTweet = prompt('Edit your tweet:', tweetContent.textContent);
+
+            if (editedTweet !== null) {
+                // Check if the tweet has been edited before
+                var isEdited = timestamp.nextSibling && timestamp.nextSibling.textContent === '(edited)';
+
+                if (!isEdited) {
+                    // If not edited before, add "(edited)" below timestamp
+                    var editedIndicator = document.createElement('span');
+                    editedIndicator.className = 'edited-indicator';
+                    editedIndicator.textContent = '(edited)';
+                    timestamp.parentNode.insertBefore(editedIndicator, timestamp.nextSibling);
+                }
+
+                tweetContent.textContent = editedTweet;
+                // Update tweet in localStorage
+                updateTweet(tweetContent, timestamp);
+            }
+        }
+
+
+        function updateTweet(tweetContent, timestamp) {
+            var tweets = JSON.parse(localStorage.getItem('tweets')) || [];
+
+            for (var i = 0; i < tweets.length; i++) {
+                if (formatTimestamp(new Date(tweets[i].timestamp)) === timestamp.textContent) {
+                    tweets[i].tweet = tweetContent.textContent;
+                    tweets[i].edited = true; // Mark the tweet as edited
+                    localStorage.setItem('tweets', JSON.stringify(tweets));
+                    break;
+                }
+            }
+        }
+
+// Function to handle tweet deletion
+function deleteSelectedTweets() {
+    var checkboxes = document.getElementsByClassName('tweet-checkbox');
+    var tweetsContainer = document.getElementById('tweetsContainer');
+
+
+
+    for (var i = checkboxes.length - 1; i >= 0; i--) {
+        if (checkboxes[i].checked) {
+            tweetsContainer.removeChild(checkboxes[i].parentNode);
+          deleteTweetFromStorage(tweets[i].tweet);
+        }
+    }
+
+    // Hide the "Delete" button after deletion
+    document.getElementById('confirmDelete').style.display = 'none';
+
+    // Reset modes and update button visibility
+    editMode = false;
+    deleteMode = false;
+    updateButtonVisibility();
+}
+
+// Modify deleteTweetFromStorage function to use the timestamp from the tweet content
+function deleteSelectedTweets() {
+    var checkboxes = document.getElementsByClassName('tweet-checkbox');
+    var tweetsContainer = document.getElementById('tweetsContainer');
+
+     // Collect indices of tweets to be deleted
+    var indicesToDelete = [];
+    for (var i = 0; i < checkboxes.length; i++) {
+        if (checkboxes[i].checked) {
+            var tweetIndex = parseInt(checkboxes[i].dataset.index);
+            indicesToDelete.push(tweetIndex);
+        }
+    }
+
+    // Delete tweets from localStorage
+    var tweets = JSON.parse(localStorage.getItem('tweets')) || [];
+    indicesToDelete.sort((a, b) => b - a); // Sort indices in descending order
+    for (var i = 0; i < indicesToDelete.length; i++) {
+        tweets.splice(indicesToDelete[i], 1);
+    }
+    localStorage.setItem('tweets', JSON.stringify(tweets));
+
+    // Remove tweets from the display
+    for (var i = checkboxes.length - 1; i >= 0; i--) {
+        if (checkboxes[i].checked) {
+            tweetsContainer.removeChild(checkboxes[i].parentNode);
+        }
+    }
+
+    // Hide the "Delete" button after deletion
+    document.getElementById('confirmDelete').style.display = 'none';
+
+    // Reset modes and update button visibility
+    editMode = false;
+    deleteMode = false;
+    updateButtonVisibility();
+}
+
+// Modify updateButtonVisibility function to show/hide the "Delete" button
+function updateButtonVisibility() {
+    var tweets = document.getElementsByClassName('tweet');
+    var controlButtons = document.getElementById('controlButtons');
+    var confirmDeleteButton = document.getElementById('confirmDelete');
+
+    if (editMode || deleteMode) {
+        controlButtons.style.display = 'flex';
+        confirmDeleteButton.style.display = deleteMode ? 'inline-block' : 'none';
+
+        for (var i = 0; i < tweets.length; i++) {
+            var checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.className = 'tweet-checkbox';
+
+            if (deleteMode) {
+                checkbox.style.display = 'inline-block';
+            } else {
+                checkbox.style.display = 'none';
+            }
+
+            tweets[i].insertBefore(checkbox, tweets[i].firstChild);
+        }
+    } else {
+        controlButtons.style.display = 'none';
+        confirmDeleteButton.style.display = 'none';
+
+        var checkboxes = document.getElementsByClassName('tweet-checkbox');
+        for (var i = 0; i < checkboxes.length; i++) {
+            checkboxes[i].remove();
+        }
+    }
+}
+
+
+    </script>
+<!-- Red "Delete" button -->
+<button id="confirmDelete" onclick="deleteSelectedTweets()">Delete</button>
+
+</body>
+</html>
